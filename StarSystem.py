@@ -27,7 +27,7 @@ outerHZ = 0.087*AU
 xAi, yAi = 0,0
 xBi, yBi = rb, 0
 xCi, yCi = -rc, 0
-xEi, yEi = 500000*AU, 0
+xEi, yEi = 50000*AU, 0
 
 #Velocities
 vxAi, vyAi = 0, 0
