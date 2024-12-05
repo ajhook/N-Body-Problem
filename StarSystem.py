@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import odeint
 
 G = 6.67e-11
-AU = 1.496e11
+AU = 1.4959787e11
 km = 1000
 M0 = 1.988e30
 ME = 5.97226e24
@@ -15,27 +15,44 @@ Mc = 1.272 * ME
 #Orbital Periods
 Tb = 24.7 * 24 * 3600
 Tc = 3.8 * 24 * 3600
-#Orbital Radius
-rb = 0.0946 * AU
-rc = 0.02734 * AU
 
-#Habitable Zone
-innerHZ = 0.06*AU
-outerHZ = 0.087*AU
+#Orbital Radius
+rb = 0.0875 * AU
+rc = 0.025 * AU
 
 #Positions
 xAi, yAi = 0,0
-xBi, yBi = rb, 0
-xCi, yCi = -rc, 0
-xEi, yEi = 50000*AU, 0
+xBi, yBi = -rb, 0
+xCi, yCi = 0, rc
+xEi, yEi = 0, -0.07*AU
 
 #Velocities
 vxAi, vyAi = 0, 0
 vxBi, vyBi = 0, 2* np.pi * (rb/Tb)
-vxCi, vyCi = 0, -2* np.pi * (rc/Tc)
-vxEi, vyEi = 0,0
+vxCi, vyCi = 2* np.pi * (rc/Tc), 0
+vxEi, vyEi = -43000, 0
 
 initialConditions = [xAi, yAi, xBi, yBi, xCi, yCi, xEi, yEi, vxAi, vyAi, vxBi, vyBi, vxCi, vyCi, vxEi, vyEi]
+
+def calculateEnergy(state, Ma, Mb, Mc, ME):
+    xA, yA, xB, yB, xC, yC, xE, yE, vxA, vyA, vxB, vyB, vxC, vyC, vxE, vyE = state
+
+    k1 = 0.5 * Ma * (vxA ** 2 + vyA ** 2)
+    k2 = 0.5 * Mb * (vxB ** 2 + vyB ** 2)
+    k3 = 0.5 * Mc * (vxC ** 2 + vyC ** 2)
+    k4 = 0.5 * ME * (vxE ** 2 + vyE ** 2)
+    K = k1 + k2 + k3 + k4
+
+    r_AB = np.sqrt((xB - xA) ** 2 + (yB - yA) ** 2)
+    r_AC = np.sqrt((xC - xA) ** 2 + (yC - yA) ** 2)
+    r_AE = np.sqrt((xE - xA) ** 2 + (yE - yA) ** 2)
+    r_BC = np.sqrt((xC - xB) ** 2 + (yC - yB) ** 2)
+    r_BE = np.sqrt((xE - xB) ** 2 + (yE - yB) ** 2)
+    r_CE = np.sqrt((xE - xC) ** 2 + (yE - yC) ** 2)
+
+    U = -G*(((Ma * Mb) / r_AB) + ((Mb*Mc)/r_BC) + ((Ma*Mc)/r_AC) + ((Ma*ME)/r_AE) + ((Mb*ME)/r_BE) + ((Mb*ME)/r_CE))
+
+    return K + U
 
 def fourBodySystem(state, t, G, Ma, Mb, Mc, ME,):
     xA, yA, xB, yB, xC, yC, xE, yE, vxA, vyA, vxB, vyB, vxC, vyC, vxE, vyE = state
@@ -69,8 +86,12 @@ def fourBodySystem(state, t, G, Ma, Mb, Mc, ME,):
 
     return [dxA, dyA, dxB, dyB, dxC, dyC, dxE, dyE, dvxA, dvyA, dvxB, dvyB, dvxC, dvyC, dvxE, dvyE]
 
-t = np.linspace(0, 10*Tb, 1000000)
+t = np.linspace(0, 30*Tb, 1000)
 sol = odeint(fourBodySystem, initialConditions, t, args=(G, Ma, Mb, Mc, ME))
+
+E = np.array([calculateEnergy(state,Ma,Mb,Mc,ME) for state in sol])
+dE = abs((E - E[0])/E[0])
+
 
 xA = sol[:, 0]/AU
 yA = sol[:, 1]/AU
@@ -80,6 +101,9 @@ xC = sol[:, 4]/AU
 yC = sol[:, 5]/AU
 xE = sol[:, 6]/AU
 yE = sol[:, 7]/AU
+
+r_AB = np.sqrt((xB - xA) ** 2 + (yB - yA) ** 2)
+r_AE = np.sqrt((xE - xA) ** 2 + (yE - yA) ** 2)
 
 plt.figure(figsize=(10, 10))
 plt.plot(xA, yA, label=f'LHS-1140-A', color='r')
@@ -92,4 +116,15 @@ plt.xlabel("X(AU)")
 plt.ylabel("Y(AU)")
 plt.legend()
 plt.grid()
+ax = plt.figure(2)
+plt.plot(t, dE, label="Relative Energy Deviation")
+plt.xlabel("Time")
+plt.ylabel(r"$\Delta E / E_0$")
+plt.title("Energy Conservation")
+plt.grid()
+plt.figure(3)
+plt.plot(t,r_AB,color='r')
+plt.plot(t,r_AE,color='b')
+plt.ylim(0,0.12)
+plt.fill_between(t,0.0616,0.0943,alpha=0.2,color='g')
 plt.show()

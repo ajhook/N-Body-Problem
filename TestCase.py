@@ -55,8 +55,9 @@ def testCase(state, t, G, m1, m2):
 
 initial = [x1i, x2i, y1i, y2i, vx1i, vx2i, vy1i, vy2i]
 
-t = np.linspace(0, 50 * 365.25 * 24 * 60 * 60, 100000) #Create time array
+t = np.linspace(0, 5 * 365.25 * 24 * 60 * 60, 1000) #Create time array
 T = t/365*24*60*60
+
 sol = odeint(testCase, initial, t, args=(G, m1, m2)) #Solve ODE's
 
 E = np.array([calculateEnergy(state,m1,m2) for state in sol])
@@ -67,6 +68,7 @@ x1 = sol[:,0]/AU
 x2 = sol[:,1]/AU
 y1 = sol[:,2]/AU
 y2 = sol[:,3]/AU
+
 
 #Plot Graphs
 plt.figure(1,figsize=(10,10))
