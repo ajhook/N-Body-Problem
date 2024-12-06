@@ -15,7 +15,7 @@ Mc = 1.272 * ME
 #Orbital Periods
 Tb = 24.7 * 24 * 3600
 Tc = 3.8 * 24 * 3600
-
+Te = 40 * 24 * 3600
 #Orbital Radius
 rb = 0.0875 * AU
 rc = 0.02507 * AU
@@ -24,12 +24,13 @@ re = 0.075 * AU
 xAi, yAi = 0,0
 xBi, yBi = -rb, 0
 xCi, yCi = 0, rc
-xEi, yEi = 0, -0.07*AU
+xEi, yEi = -re,0
 
 #Velocities
 vxAi, vyAi = 0, 0
 vxBi, vyBi = 0, 2* np.pi * (rb/Tb)
 vxCi, vyCi = 2* np.pi * (rc/Tc), 0
+vxEi, vyEi = 0,-20000
 
 
 threeBodyConditions = [xAi, yAi, xBi, yBi, xCi, yCi, vxAi, vyAi, vxBi, vyBi, vxCi, vyCi]
@@ -121,10 +122,10 @@ def EccentricityV(initial_Conditions, ve, t, G, Ma, Mb, Mc, ME ):
     xEi, yEi = -re, 0
     xvEi, vyEi = 0, -ve
     state = (
-            initial_Conditions[0:6] # xA, xB, yA, yB
+            initial_Conditions[:6] # xA, xB, yA, yB
             + [xEi] + [yEi]
-            + initial_Conditions[8:12] # vxA, vyA, vxB, vyB
-            + [xvEi] + [vyEi]
+            + initial_Conditions[8:14] # vxA, vyA, vxB, vyB
+            + [vxEi] + [vyEi]
     )
 
     solution = odeint(fourBodySystem, state, t, args=(G, Ma, Mb, Mc, ME))
@@ -135,29 +136,41 @@ def EccentricityV(initial_Conditions, ve, t, G, Ma, Mb, Mc, ME ):
 
     rmax, rmin = np.max(distance), np.min(distance)
     eccentricityV = (rmax-rmin)/(rmax + rmin)
-    print(f'Radius: {rc/AU}, ' f' Eccentricity: {eccentricityV}')
+    print(f'Velocity: {ve}, ' f' Eccentricity: {eccentricityV}')
 
     return eccentricityV
 
+
 #Create time array for one orbit of LHS-1140-c around its star
 t = np.linspace(0, Tc, 1000)
-
+te = np.linspace(0, Te, 1000)
 #Solve ODE's for each system
 fourBodySol = odeint(fourBodySystem, fourBodyConditions, t, args=(G, Ma, Mb, Mc, ME))
 threeBodySol = odeint(threeBodySystem, threeBodyConditions, t, args=(G, Ma, Mb, Mc))
 
-rvalues = np.linspace(0.0028*AU, 0.06*AU, 1000)
+rvalues = np.linspace(0.0028*AU, 0.06*AU, 100000)
+vvalues = np.linspace(20000, 60000, 100000)
 eccentricitiesR = []
+eccentricitiesV = []
+
+for v in vvalues:
+    eV = EccentricityV(fourBodyConditions, v, t, G, Ma, Mb, Mc, ME)
+    eccentricitiesV.append(eV)
 
 for r in rvalues:
     eR= EccentricityR(threeBodyConditions,r,t,G,Ma,Mb,Mc)
     eccentricitiesR.append(eR)
 
+v = vvalues[np.argmin(eccentricitiesV)]
 r = rvalues[np.argmin(eccentricitiesR)]
 print(f'Radius: {r/AU}, ' f'Min Eccentricity: {np.min(eccentricitiesR)}')
+print(f'Radius: {v}' f'Min Eccentricity: {np.min(eccentricitiesV)}')
 
+plt.figure(1)
 plt.figure(figsize=(10, 6))
 plt.plot(rvalues / AU, eccentricitiesR, label="Eccentricity vs Radius")
+plt.figure(2)
+plt.plot(vvalues, eccentricitiesV, label="Eccentricity vs V")
 plt.xlabel("Orbital Radius (AU)")
 plt.ylabel("Eccentricity")
 plt.title("Eccentricity vs Orbital Radius")
