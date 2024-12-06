@@ -2,24 +2,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
+#Constants
 G = 6.67e-11
 AU = 1.4959787e11
 km = 1000
 M0 = 1.988e30
 ME = 5.97226e24
-
 Ma = 0.146 * M0
 Mb = 5.6 * ME
-Mc = 1.272 * ME
+Mc = 1.91 * ME
 
 #Orbital Periods
 Tb = 24.7 * 24 * 3600
 Tc = 3.8 * 24 * 3600
-Te = 40 * 24 * 3600
+
 #Orbital Radius
 rb = 0.0875 * AU
 rc = 0.02507 * AU
 re = 0.075 * AU
+
 #Positions
 xAi, yAi = 0,0
 xBi, yBi = -rb, 0
@@ -30,12 +31,13 @@ xEi, yEi = -re,0
 vxAi, vyAi = 0, 0
 vxBi, vyBi = 0, 2* np.pi * (rb/Tb)
 vxCi, vyCi = 2* np.pi * (rc/Tc), 0
-vxEi, vyEi = 0,-20000
+vxEi, vyEi = 0,-41541.5
 
 
 threeBodyConditions = [xAi, yAi, xBi, yBi, xCi, yCi, vxAi, vyAi, vxBi, vyBi, vxCi, vyCi]
 fourBodyConditions = [xAi, yAi, xBi, yBi, xCi, yCi, xEi, yEi, vxAi, vyAi, vxBi, vyBi, vxCi, vyCi, vxEi, vyEi]
 
+#Function to solve the three body problem
 def threeBodySystem(state, t, G, Ma, Mb, Mc):
     xA, yA, xB, yB, xC, yC, vxA, vyA, vxB, vyB, vxC, vyC = state
 
@@ -61,6 +63,8 @@ def threeBodySystem(state, t, G, Ma, Mb, Mc):
     dvyC = (G * (Ma/r_AC**3) * (yA - yC)) + (G * (Mb/r_BC**3) * (yB-yC))
 
     return [dxA, dyA, dxB, dyB, dxC, dyC, dvxA, dvyA, dvxB, dvyB, dvxC, dvyC]
+
+#Function to solve the four body problem
 def fourBodySystem(state, t, G, Ma, Mb, Mc, ME,):
     xA, yA, xB, yB, xC, yC, xE, yE, vxA, vyA, vxB, vyB, vxC, vyC, vxE, vyE = state
 
@@ -93,47 +97,53 @@ def fourBodySystem(state, t, G, Ma, Mb, Mc, ME,):
 
     return [dxA, dyA, dxB, dyB, dxC, dyC, dxE, dyE, dvxA, dvyA, dvxB, dvyB, dvxC, dvyC, dvxE, dvyE]
 
-#Calculating the eccentricity of an orbit given rc
+#Funtion to calculate the eccentricity of an orbit given the Radius
 def EccentricityR(initial_Conditions, rc, t, G, Ma, Mb, Mc ):
 
+    #Update initial conditions for C
     xCi, yCi = 0, rc
     xvCi, vyCi = -2*np.pi*(rc/Tc), 0
+
+    #Create new state
     state = (
             initial_Conditions[0:4] # xA, xB, yA, yB
             + [xCi] + [yCi]
             + initial_Conditions[6:10] # vxA, vyA, vxB, vyB
             + [xvCi] + [vyCi]
     )
+    solution = odeint(threeBodySystem, state, t, args=(G, Ma, Mb, Mc)) #Solve ODE's with new state
 
-    solution = odeint(threeBodySystem, state, t, args=(G, Ma, Mb, Mc))
-
-    #extract variable
+    #Extract variables
     xC,yC = solution[:,4], solution[:,5]
     distance = np.sqrt(xC**2 + yC**2)
 
+    #Calculate eccentricity
     rmax, rmin = np.max(distance), np.min(distance)
     eccentricityR = (rmax-rmin)/(rmax + rmin)
     print(f'Radius: {rc/AU}, ' f' Eccentricity: {eccentricityR}')
 
     return eccentricityR
 
+#Funtion to calculate the eccentricity of an orbit given the Velocity
 def EccentricityV(initial_Conditions, ve, t, G, Ma, Mb, Mc, ME ):
-
+    # Update initial conditions for E
     xEi, yEi = -re, 0
     xvEi, vyEi = 0, -ve
+
+    # Create new state
     state = (
             initial_Conditions[:6] # xA, xB, yA, yB
             + [xEi] + [yEi]
             + initial_Conditions[8:14] # vxA, vyA, vxB, vyB
             + [vxEi] + [vyEi]
     )
-
-    solution = odeint(fourBodySystem, state, t, args=(G, Ma, Mb, Mc, ME))
+    solution = odeint(fourBodySystem, state, t, args=(G, Ma, Mb, Mc, ME)) #Solve ODE's with new state
 
     #extract variable
     xE,yE = solution[:,6], solution[:,7]
     distance = np.sqrt(xE**2 + yE**2)
 
+    # Calculate eccentricity
     rmax, rmin = np.max(distance), np.min(distance)
     eccentricityV = (rmax-rmin)/(rmax + rmin)
     print(f'Velocity: {ve}, ' f' Eccentricity: {eccentricityV}')
@@ -141,36 +151,43 @@ def EccentricityV(initial_Conditions, ve, t, G, Ma, Mb, Mc, ME ):
     return eccentricityV
 
 
-#Create time array for one orbit of LHS-1140-c around its star
-t = np.linspace(0, Tc, 1000)
-te = np.linspace(0, Te, 1000)
-#Solve ODE's for each system
-fourBodySol = odeint(fourBodySystem, fourBodyConditions, t, args=(G, Ma, Mb, Mc, ME))
-threeBodySol = odeint(threeBodySystem, threeBodyConditions, t, args=(G, Ma, Mb, Mc))
+#Create time arrays
+t = np.linspace(5*Tc, 6*Tc, 1000) #One orbit of LHS-1140-C
+te = np.linspace (0, Tb, 1000) #One orbit of LHS-1140-B for a rough estimate of earths
 
-rvalues = np.linspace(0.0028*AU, 0.06*AU, 100000)
-vvalues = np.linspace(20000, 60000, 100000)
+#Create trial values
+Rvalues = np.linspace(0.0028*AU, 0.06*AU, 1000)
+Vvalues = np.linspace(20000, 60000, 1000)
+
+#Initiate storage arrays
 eccentricitiesR = []
 eccentricitiesV = []
 
-for v in vvalues:
+#Calculate eccentricity for each value
+for v in Vvalues:
     eV = EccentricityV(fourBodyConditions, v, t, G, Ma, Mb, Mc, ME)
-    eccentricitiesV.append(eV)
+    eccentricitiesV.append(eV) #Store values in array
 
-for r in rvalues:
+for r in Rvalues:
     eR= EccentricityR(threeBodyConditions,r,t,G,Ma,Mb,Mc)
     eccentricitiesR.append(eR)
 
-v = vvalues[np.argmin(eccentricitiesV)]
-r = rvalues[np.argmin(eccentricitiesR)]
-print(f'Radius: {r/AU}, ' f'Min Eccentricity: {np.min(eccentricitiesR)}')
-print(f'Radius: {v}' f'Min Eccentricity: {np.min(eccentricitiesV)}')
+#Find V and R for corresponding smallest value for eccentricity
+v = Vvalues[np.argmin(eccentricitiesV)]
+r = Rvalues[np.argmin(eccentricitiesR)]
 
-plt.figure(1)
-plt.figure(figsize=(10, 6))
-plt.plot(rvalues / AU, eccentricitiesR, label="Eccentricity vs Radius")
-plt.figure(2)
-plt.plot(vvalues, eccentricitiesV, label="Eccentricity vs V")
+#Print results
+print(f'Radius: {r/AU}, ' f'Min Eccentricity: {np.min(eccentricitiesR)}') #Radius with minimum eccentricity
+print(f'Velocity: {v}' f'Min Eccentricity: {np.min(eccentricitiesV)}') #Velocity with minimum eccentricity
+
+#Plot Figures
+plt.figure(1,figsize=(10, 6))
+plt.plot(Rvalues / AU, eccentricitiesR, label="Eccentricity vs Radius")
+plt.grid()
+plt.show()
+
+plt.figure(2, figsize=(12,9))
+plt.plot(Vvalues, eccentricitiesV, label="Eccentricity vs V")
 plt.xlabel("Orbital Radius (AU)")
 plt.ylabel("Eccentricity")
 plt.title("Eccentricity vs Orbital Radius")

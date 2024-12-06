@@ -10,7 +10,7 @@ ME = 5.97226e24
 
 Ma = 0.146 * M0
 Mb = 5.6 * ME
-Mc = 1.272 * ME
+Mc = 1.91 * ME
 
 #Orbital Periods
 Tb = 24.7 * 24 * 3600
@@ -18,19 +18,19 @@ Tc = 3.8 * 24 * 3600
 
 #Orbital Radius
 rb = 0.0875 * AU
-rc = 0.025 * AU
+rc = 0.02507 * AU
 
 #Positions
 xAi, yAi = 0,0
 xBi, yBi = -rb, 0
 xCi, yCi = 0, rc
-xEi, yEi = 0, -0.07*AU
+xEi, yEi = 0, -0.075*AU
 
 #Velocities
 vxAi, vyAi = 0, 0
 vxBi, vyBi = 0, 2* np.pi * (rb/Tb)
 vxCi, vyCi = 2* np.pi * (rc/Tc), 0
-vxEi, vyEi = -43000, 0
+vxEi, vyEi = 41541.5, 0
 
 initialConditions = [xAi, yAi, xBi, yBi, xCi, yCi, xEi, yEi, vxAi, vyAi, vxBi, vyBi, vxCi, vyCi, vxEi, vyEi]
 
@@ -86,7 +86,8 @@ def fourBodySystem(state, t, G, Ma, Mb, Mc, ME,):
 
     return [dxA, dyA, dxB, dyB, dxC, dyC, dxE, dyE, dvxA, dvyA, dvxB, dvyB, dvxC, dvyC, dvxE, dvyE]
 
-t = np.linspace(0, 30*Tb, 1000)
+t = np.linspace(0, 5*Tb, 1000)
+T = t/(24*3600)
 sol = odeint(fourBodySystem, initialConditions, t, args=(G, Ma, Mb, Mc, ME))
 
 E = np.array([calculateEnergy(state,Ma,Mb,Mc,ME) for state in sol])
@@ -104,29 +105,37 @@ yE = sol[:, 7]/AU
 
 r_AB = np.sqrt((xB - xA) ** 2 + (yB - yA) ** 2)
 r_AE = np.sqrt((xE - xA) ** 2 + (yE - yA) ** 2)
+r_AC = np.sqrt((xC - xA) ** 2 + (yC - yA) ** 2)
 
 plt.figure(figsize=(10, 10))
-plt.plot(xA, yA, label=f'LHS-1140-A', color='r')
-plt.plot(xB, yB, label=f'LHS-1140-B', color='b')
+plt.plot(0,0, 'o', label=f'LHS-1140-A', color='orange')
+plt.plot(xB, yB, label=f'LHS-1140-B', color='r')
 plt.plot(xC, yC, label=f'LHS-1140-C', color='g')
-plt.plot(xE, yE, label=f'Earth', color ='y')
-plt.xlim(-0.2,0.2)
-plt.ylim(-0.2,0.2)
-plt.xlabel("X(AU)")
-plt.ylabel("Y(AU)")
+plt.plot(xE, yE, label=f'Earth', color ='b')
+plt.xlim(-0.1,0.1)
+plt.ylim(-0.1,0.1)
+plt.title("Orbital Paths of the LHS-1140 Star System", size=18)
+plt.xlabel("X(AU)", size=18)
+plt.ylabel("Y(AU)", size=18)
 plt.legend()
 plt.grid()
-ax = plt.figure(2)
-plt.plot(t, dE, label="Relative Energy Deviation")
-plt.xlabel("Time")
+
+plt.figure(2)
+plt.plot(T, dE, label="Relative Energy Deviation")
+plt.xlabel("Time (days)")
 plt.ylabel(r"$\Delta E / E_0$")
 plt.title("Energy Conservation")
+plt.xlim(0,125)
 plt.grid()
+
 plt.figure(3)
-plt.plot(t,r_AB,color='r')
-plt.plot(t,r_AE,color='b')
+plt.plot(t,r_AB,color='r', label='LHS-1140-B' )
+plt.plot(t,r_AE,color='b', label='Earth')
+plt.plot(t,r_AC,color='g', label='LHS-1140-C')
 plt.ylim(0,0.12)
+plt.xlim(0,6)
 plt.fill_between(t,0.0616,0.0943,alpha=0.2,color='g')
 plt.grid()
 plt.legend()
+
 plt.show()
