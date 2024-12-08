@@ -67,7 +67,7 @@ def threeBodySystem(state, t, G, m1, m2, m3):
 
     return [dx1, dy1, dx2, dy2, dx3, dy3, dvx1, dvy1, dvx2, dvy2, dvx3, dvy3]
 
-time = np.linspace(0, 10, 10000) #Create time array
+time = np.linspace(1, 20, 1000) #Create time array
 
 sol = odeint(threeBodySystem, initialConditions, time, args = (G, m1, m2, m3)) #Solve ODE's
 
@@ -90,8 +90,9 @@ plt.plot(x1, y1, '--', label=f'm1', color='b')
 plt.plot(x2, y2, '--', label=f'm2', color='r')
 plt.plot(x3, y3, '--', label=f'm3', color='g')
 plt.title("Burrau's Problem",size=20)
-plt.xlabel("x",size=18)
-plt.ylabel("y",size=18)
+plt.xlabel("X",size=18)
+plt.ylabel("Y",size=18)
+
 #Plot initial positions
 plt.plot([x1[0]], [y1[0]], 'ko')
 plt.plot([x2[0]], [y2[0]], 'ko')

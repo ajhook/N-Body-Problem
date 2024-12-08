@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
+#Define Constants
 G = 6.67e-11
 AU = 1.4959787e11
 km = 1000

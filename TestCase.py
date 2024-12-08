@@ -1,7 +1,7 @@
-#Import Libraries
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 #Constants
 G = 6.67e-11
@@ -66,7 +66,7 @@ sol = odeint(testCase, initialConditions, t, args=(G, m1, m2)) #Solve ODE's
 
 #Calculate relative energy change
 E = np.array([calculateEnergy(state,m1,m2) for state in sol])
-dE = abs((E - E[0])/E[0])
+dE = abs((E - E[0])/E[0])/ 1e-6
 
 #Extract values in terms of AU
 x1 = sol[:,0]/AU
@@ -77,30 +77,34 @@ y2 = sol[:,3]/AU
 #Plot Graphs
 #Orbital paths
 plt.figure(1,figsize=(10,10))
+plt.ylim(-0.4,0.4)
 plt.xlabel("X (AU)",size=18)
 plt.ylabel("Y (AU)", size=18)
 plt.title("Orbital Paths", size=18)
 plt.axis('equal')
-plt.plot(x1,y1,label="m1", color='b')
+plt.plot(x1,y1,label="m1", color='black')
 plt.plot(x2,y2, label="m2", color='r')
-plt.legend()
+plt.legend(fontsize=18)
 plt.grid()
+plt.tick_params(axis='both', which='major', labelsize=14)
 
 #X displacement from origin
 plt.figure(2,figsize=(12,9))
-plt.title("X Displacement over Time", size = 18)
+plt.title("Time Evolution of X-Position", size = 18)
 plt.xlabel("Time (Years)",size=18)
 plt.ylabel("X (AU)",size=18)
-plt.plot(T,x1, color='b', label="m1")
+plt.plot(T,x1, color='black', label="m1")
 plt.plot(T,x2, color='r', label="m2")
-plt.legend()
+plt.legend(fontsize=18, loc="upper right")
 plt.grid()
+plt.tick_params(axis='both', which='major', labelsize=14)
 
 #Relative Energy Change
 plt.figure(3,(12,9))
 plt.title("Relative Energy Change", size = 18)
 plt.xlabel("Time (Years)", size=18)
-plt.ylabel(r"$\Delta E / E_0$", size=18)
+plt.ylabel(r"$\Delta E / E_0$  ($1 \times 10^{-6}$)", size=18)
 plt.plot(T,dE)
 plt.grid()
+plt.tick_params(axis='both', labelsize=16)
 plt.show()
